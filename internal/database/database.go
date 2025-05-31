@@ -22,6 +22,8 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+
+	SetTenant(tenantId string) (string, error)
 }
 
 type service struct {
@@ -112,4 +114,18 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	log.Printf("Disconnected from database: %s", database)
 	return s.db.Close()
+}
+
+func (s *service) SetTenant(tenantId string) (string, error) {
+	query := fmt.Sprintf("SET search_path TO %s", tenantId)
+	_, err := s.Exec(query, tenantId)
+	if err != nil {
+		return "", err
+	}
+	return tenantId, nil
+}
+
+func (s *service) Exec(query string, args ...interface{}) (sql.Result, error) {
+	fmt.Println(query)
+	return s.db.Exec(query, args...)
 }
